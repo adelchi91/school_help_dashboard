@@ -1,4 +1,5 @@
 pandas 
 scikit-learn
 seaborn
-jupyterlab
+xgboost	
+streamlit

@@ -8,13 +8,21 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from xgboost import XGBRegressor
 import numpy as np
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 # PARAMETER 
 NUMBER_OF_FEATURES_WE_CONSIDER = 15 # We decide to focus on the first 15 most important features
                                     # which will be displayed on the dashboard
+SEED=42 # random_state
 
 def load_data():
     return pd.read_csv("./data/exercice_data.csv", sep=None, encoding='latin1')
+
+def load_new_data():
+    return pd.read_csv("./data/new_data.csv", sep=None, encoding='latin1')
 
 def preprocess_data(df):
     replace_dict = {"yes": 1, "no": 0}
@@ -31,7 +39,7 @@ def define_transformer_and_pipeline(df):
     pipeline = Pipeline([
         ('preprocessor', preprocessor),
         ('model', XGBRegressor(
-            random_state=42,
+            random_state=SEED,
             n_estimators=100,  
             max_depth=2,  
             learning_rate=0.1,  
@@ -95,9 +103,17 @@ def compute_composite_score(df, feature_names, top_features, feature_importance)
 
 def main():
     df = load_data()
+    # retrain with new data, if the latter is present 
+    new_data = load_new_data()
+
+    # Concatenate new data with existing data if new data is present
+    if new_data.shape[0] > 0:
+        logging.info("New data observed. Retraining running.")
+        df = pd.concat([df, new_data], ignore_index=True)
+    # preprocess data
     df = preprocess_data(df)
     pipeline, X, y = define_transformer_and_pipeline(df)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=SEED)
     y_train_pred, y_test_pred = train_model(pipeline, X_train, y_train, X_test)
     # We retrieve the most important features coming from the boosting model 
     feature_importance = pipeline.named_steps['model'].feature_importances_

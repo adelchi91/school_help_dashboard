@@ -1,2 +1,3 @@
 - automatic retraining
 - code improvement : dashboard.py
+- requirements
